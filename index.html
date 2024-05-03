@@ -58,22 +58,22 @@
 </script>
 <script src="/akeron.js"></script>
 <script>
-    // DOM Elements
-    const connectButton = document.getElementById('connectBleButton');
-    const disconnectButton = document.getElementById('disconnectBleButton');
-    const onButton = document.getElementById('onButton');
-    const offButton = document.getElementById('offButton');
-    
+	// DOM Elements
+	const connectButton = document.getElementById('connectBleButton');
+	const disconnectButton = document.getElementById('disconnectBleButton');
+	const onButton = document.getElementById('onButton');
+	const offButton = document.getElementById('offButton');
+
 	const retrievedValue = document.getElementById('valueContainer');
 	const phValue = document.getElementById('phContainer');
 	const redoxValue = document.getElementById('redoxContainer');
 	const tempValue = document.getElementById('tempContainer');
 	const saltValue = document.getElementById('saltContainer');
 	const elxValue = document.getElementById('elxContainer');
-	
-    const latestValueSent = document.getElementById('valueSent');
-    const bleStateContainer = document.getElementById('bleState');
-    const timestampContainer = document.getElementById('timestamp');
+
+	const latestValueSent = document.getElementById('valueSent');
+	const bleStateContainer = document.getElementById('bleState');
+	const timestampContainer = document.getElementById('timestamp');
 
 
 	//-------------------//
@@ -99,7 +99,11 @@
         }
     });
 	
-	timer = setInterval(function() { if (bleServer && bleServer.connected){ writeOnCharacteristic(composeRequest(nextRequest));nextRequest = 65;} }, 2000);
+	timer = setInterval(function() { 
+		if (bleServer && bleServer.connected){ 
+			writeOnCharacteristic(composeRequest(nextRequest)); 
+			if(nextRequest == 65) nextRequest = 77; else nextRequest = 65;
+		}}, 2000);
 
     // Disconnect Button
     disconnectButton.addEventListener('click', disconnectDevice);
