@@ -82,6 +82,8 @@ function parseData(buf, appareil) {
 				appareil.Timer = byteToBool(buf[13], 7) && byteToBool(buf[13],5);
 				appareil.DureeST = buf[13] & 0x1F;
 				break;
+			default:
+				break;
 		}
 	}
 }
