@@ -11,6 +11,9 @@ const akeron = {
 	valRdx: null,
 	valAmp: null,
 	valElx: null,
+	
+	setPh: null,
+	setRdx: null,
 
 	// Presence de pompes / capteurs
 	PompePlus: null,
@@ -88,12 +91,9 @@ function parseData(buf, appareil) {
 	}
 }
 
-function byteToBool(cible, bit) {
-	const masque = Math.pow(2, bit);
-	cible &= masque;
-	return cible !== 0;
-}
-
+//----------------------------//
+//---[ Composition trames ]---//
+//----------------------------//
 function composeRequest(mnemonic) {
 	const table = new Uint8Array(7);
 	table[0] = 42; // Start
@@ -108,10 +108,176 @@ function composeRequest(mnemonic) {
 	return table;
 }
 
+function compositionConsigne(donnee, typemesure) {
+    let consigne;
+    const trame = trameDonneesVide('S');
+
+    switch (typemesure) {
+        case 'ph':
+            trame[1] = 'S'.charCodeAt(0);
+            consigne = donnee;
+            trame[2] = highByte(consigne);
+            trame[3] = lowByte(consigne);
+            break;
+        case 'redox':
+            trame[1] = 'E'.charCodeAt(0);
+            consigne = Math.round(donnee);
+            trame[2] = highByte(consigne);
+            trame[3] = lowByte(consigne);
+            break;
+    }
+	trame[15] = get_crc(trame.slice(0, 15)); // CRC
+
+    return trame;
+}
+
+function compositionOffset(donnee, typemesure) {
+    let offset;
+    const trame = trameDonneesVide('M');
+
+    switch (typemesure) {
+        case 'ph':
+            offset = Math.round(donnee * 100);
+            trame[2] = highByte(offset);
+            trame[3] = lowByte(offset);
+            break;
+        case 'redox':
+            offset = Math.round(donnee);
+            trame[4] = highByte(offset);
+            trame[5] = lowByte(offset);
+            break;
+        case 'temp':
+            offset = Math.round(donnee * 10);
+            trame[6] = highByte(offset);
+            trame[7] = lowByte(offset);
+            break;
+        case 'sel':
+            offset = Math.round(donnee * 10);
+            trame[8] = highByte(offset);
+            trame[9] = lowByte(offset);
+            break;
+    }
+	trame[15] = get_crc(trame.slice(0, 15)); // CRC
+
+    return trame;
+}
+
+function compositionSeuils(seuils, typemesure) {
+    let seuilh, seuilb;
+    let trame = trameDonneesVide('D');
+    if (typemesure === 'ph') trame = trameDonneesVide('S');
+
+    switch (typemesure) {
+        case 'temp':
+            trame[4] = seuils.Erreurs.Max;
+            trame[5] = seuils.Erreurs.Min;
+            trame[6] = seuils.Warnings.Max;
+            trame[7] = seuils.Warnings.Min;
+            break;
+        case 'sel':
+            trame[8] = seuils.Warnings.Min * 10;
+            trame[9] = seuils.Erreurs.Min * 10;
+            break;
+        case 'ph':
+            seuilh = Math.round(seuils.Erreurs.Max * 100);
+            seuilb = Math.round(seuils.Erreurs.Min * 100);
+            trame[10] = highByte(seuilh);
+            trame[11] = lowByte(seuilh);
+            trame[12] = highByte(seuilb);
+            trame[13] = lowByte(seuilb);
+            break;
+    }
+	trame[15] = get_crc(trame.slice(0, 15)); // CRC
+
+    return trame;
+}
+
+function compositionValeurVolet(volet) {
+    const trame = trameDonneesVide('A');
+    trame[9] = volet;
+	trame[15] = get_crc(trame.slice(0, 15)); // CRC
+
+    return trame;
+}
+
+function compositionActivationBoost(boost) {
+    const trame = trameDonneesVide('A');
+    trame[3] = highByte(boost);
+    trame[4] = lowByte(boost);
+	trame[15] = get_crc(trame.slice(0, 15)); // CRC
+
+    return trame;
+}
+
+function compositionActivationVolet(appareil, volet) {
+    const trame = trameDonneesVide('A');
+    trame[10] = byteSet(volet, 3, 0);
+	trame[15] = get_crc(trame.slice(0, 15)); // CRC
+
+    return trame;
+}
+
+function compositionProduction(production) {
+    const trame = trameDonneesVide('A');
+    trame[2] = production;
+	trame[15] = get_crc(trame.slice(0, 15)); // CRC
+
+    return trame;
+}
+
+function compositionResetUsine() {
+    const trame = trameDonneesVide('M');
+    trame[14] = 0xCF;
+	trame[15] = get_crc(trame.slice(0, 15)); // CRC
+	
+    return trame;
+}
+
+
+
+//-------------------------------//
+//---[ Fonctions utilitaires ]---//
+//-------------------------------//
+function byteToBool(cible, bit) {
+	const masque = Math.pow(2, bit);
+	cible &= masque;
+	return cible !== 0;
+}
+
+function byteSet(condition, position, value) {
+    if (condition) {
+        return value | (1 << position);
+    } else {
+        return value & ~(1 << position);
+    }
+}
+
+function highByte(value) {
+    return (value >> 8) & 0xFF;
+}
+
+function lowByte(value) {
+    return value & 0xFF;
+}
+
 function get_crc(array) {
 	let result = 0;
 	for (let i = 0; i < array.length; i++) {
 		result ^= array[i];
 	}
 	return result;
+}
+
+function trameDonneesVide(mnemo) {
+    const bArray = new Uint8Array(17);
+    bArray[0] = 0x2A; // Start byte
+    bArray[1] = mnemo.charCodeAt(0); // Convert character to its byte representation
+
+    for (let i = 2; i < 16; i++) {
+        bArray[i] = 0xFF; // Fill with 0xFF
+    }
+
+    bArray[16] = 0x2A; // End byte
+
+    return bArray;
 }

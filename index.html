@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-	<title>Regulwebapp</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="icon" type="image/png" href="/favicon.ico">
-	<link rel="stylesheet" type="text/css" href="/style.css">
-	<link rel="manifest" href="/manifest.json">
-	<meta charset="UTF-8">
+    <title>Regulwebapp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="favicon.ico">
+    <link rel="stylesheet" type="text/css" href="style.css">
+	<link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
 </head>
 
 <body>
@@ -26,14 +26,20 @@
         <div class="card-grid">
 			<div class="card">
                 <h2>Electrolyse</h2>
-				<p class="elx"><span id="elxContainer">--</span> %</p>
+				<p class="elx"><span id="elxContainer">50</span> %</p>
+				<p><input type="range" min="0" max="100" value="50" step="5" class="slider" id="elxSlider"></p>
                 <button id="onButton" class="onButton">BOOST</button>
                 <button id="offButton" class="offButton">VOLET</button>
             </div>
             <div class="card">
-                <h2>Mesures</h2>
-				<p class="reading">pH: <span id="phContainer">NaN</span></p>
-				<p class="reading">Redox: <span id="redoxContainer">NaN</span> mV</p>
+				<h3>pH</h3>
+				<p class="reading">Valeur: <span id="phContainer">NaN</span></p>
+				<p class="reading">Consigne: <span id="phSetContainer">7.5</span></p>
+				<p><input type="range" min="600" max="1000" value="750" step="5" class="slider" id="phSlider"></p>
+				<h3>Redox</h3>
+				<p class="reading">Valeur: <span id="redoxContainer">NaN</span> mV</p>
+				<p class="reading">Consigne: <span id="redoxSetContainer">750</span> mV</p>
+				<p><input type="range" min="250" max="1000" value="750" step="5" class="slider" id="redoxSlider"></p>
 				<p class="reading">Salt: <span id="saltContainer">NaN</span> g/L</p>
 				<p class="reading">Temp: <span id="tempContainer">NaN</span> &deg;C</p>
             </div>
@@ -53,43 +59,50 @@
 
 <script>
 	if('serviceWorker' in navigator) {
-		navigator.serviceWorker.register('/sw.js', { scope: '' });
+		navigator.serviceWorker.register('sw.js', { scope: '' });
 	}
 </script>
-<script src="/akeron.js"></script>
+<script src="akeron.js"></script>
 <script>
-	// DOM Elements
-	const connectButton = document.getElementById('connectBleButton');
-	const disconnectButton = document.getElementById('disconnectBleButton');
-	const onButton = document.getElementById('onButton');
-	const offButton = document.getElementById('offButton');
-
+    // DOM Elements
+    const connectButton = document.getElementById('connectBleButton');
+    const disconnectButton = document.getElementById('disconnectBleButton');
+    const onButton = document.getElementById('onButton');
+    const offButton = document.getElementById('offButton');
+	
+	const sliderph = document.getElementById('phSlider');
+	const sliderredox = document.getElementById('redoxSlider');
+	const sliderelx = document.getElementById('elxSlider');
+	
+	const phSetValue = document.getElementById('phSetContainer');
+	const redoxSetValue = document.getElementById('redoxSetContainer');
+    
 	const retrievedValue = document.getElementById('valueContainer');
 	const phValue = document.getElementById('phContainer');
 	const redoxValue = document.getElementById('redoxContainer');
 	const tempValue = document.getElementById('tempContainer');
 	const saltValue = document.getElementById('saltContainer');
 	const elxValue = document.getElementById('elxContainer');
-
-	const latestValueSent = document.getElementById('valueSent');
-	const bleStateContainer = document.getElementById('bleState');
-	const timestampContainer = document.getElementById('timestamp');
+	
+    const latestValueSent = document.getElementById('valueSent');
+    const bleStateContainer = document.getElementById('bleState');
+    const timestampContainer = document.getElementById('timestamp');
 
 
 	//-------------------//
 	//---[ BLUETOOTH ]---//
 	//-------------------//
-	//Define BLE Device Specs
-	var deviceName ='REGUL.';
-	var bleService = '0bd51666-e7cb-469b-8e4d-2742f1ba77cc';
-	var uartCharacteristic = 'e7add780-b042-4876-aae1-112855353cc1';
-	var configCharacteristic= '00002902-0000-1000-8000-00805f9b34fb';
+    //Define BLE Device Specs
+    var deviceName ='REGUL.';
+    var bleService = '0bd51666-e7cb-469b-8e4d-2742f1ba77cc';
+    var uartCharacteristic = 'e7add780-b042-4876-aae1-112855353cc1';
+    var configCharacteristic= '00002902-0000-1000-8000-00805f9b34fb';
 
-	//Global Variables to Handle Bluetooth
-	var bleServer;
-	var bleServiceFound;
-	var uartCharacteristicFound;
-
+    //Global Variables to Handle Bluetooth
+    var bleServer;
+    var bleServiceFound;
+    var uartCharacteristicFound;
+	
 	var nextRequest = 77;
 	
     // Connect Button (search for BLE Devices only if BLE is available)
@@ -99,21 +112,40 @@
         }
     });
 	
+	sliderph.addEventListener('input', async function() {
+        const value = sliderph.value;
+        //sliderphValue.textContent = `${value}`;
+		phSetValue.innerHTML = JSON.stringify(value/100);
+        writeOnCharacteristic(compositionConsigne(parseInt(value, 10), 'ph'));
+    });
+	
+	sliderredox.addEventListener('input', async function() {
+        const value = sliderredox.value;
+		redoxSetValue.innerHTML = `${value}`;
+        writeOnCharacteristic(compositionConsigne(parseInt(value, 10), 'redox'));
+    });
+	
+	sliderelx.addEventListener('input', async function() {
+        const value = sliderelx.value;
+		elxValue.innerHTML = `${value}`;
+        writeOnCharacteristic(compositionProduction(parseInt(value, 10)));
+    });
+	
 	timer = setInterval(function() { 
 		if (bleServer && bleServer.connected){ 
 			writeOnCharacteristic(composeRequest(nextRequest)); 
 			if(nextRequest == 65) nextRequest = 77; else nextRequest = 65;
 		}}, 2000);
 
-	// Disconnect Button
-	disconnectButton.addEventListener('click', disconnectDevice);
+    // Disconnect Button
+    disconnectButton.addEventListener('click', disconnectDevice);
 
-	// Write to the ESP32 LED Characteristic
-	onButton.addEventListener('click', () => writeOnCharacteristic(1));
-	offButton.addEventListener('click', () => writeOnCharacteristic(0));
+    // Write to the ESP32 LED Characteristic
+    onButton.addEventListener('click', () => writeOnCharacteristic(1));
+    offButton.addEventListener('click', () => writeOnCharacteristic(0));
 
-	// Check if BLE is available in your Browser
-	function isWebBluetoothEnabled() {
+    // Check if BLE is available in your Browser
+    function isWebBluetoothEnabled() {
         if (!navigator.bluetooth) {
             console.log('Web Bluetooth API is not available in this browser!');
             bleStateContainer.innerHTML = "Web Bluetooth API is not available in this browser/device!";
@@ -180,15 +212,16 @@
 	function handleCharacteristicChange(event) {
 		const buf = new Uint8Array(event.target.value.buffer); // Assuming event.target.value is an ArrayBuffer
 		const bufHex = toHexString(buf);
-
+		
 		console.log("Characteristic value changed: ", bufHex);
 		parseData(buf, akeron);
 		phValue.innerHTML = JSON.stringify(akeron.valPh/100);
 		redoxValue.innerHTML = JSON.stringify(akeron.valRdx);
 		tempValue.innerHTML = JSON.stringify(akeron.valTemp/10);
 		saltValue.innerHTML = JSON.stringify(akeron.valSel/10);
-		elxValue.innerHTML = JSON.stringify(akeron.valElx);
-				
+        elxValue.innerHTML = JSON.stringify(akeron.valElx);
+		elxSlider.value = akeron.valElx;
+					
 		retrievedValue.innerHTML = JSON.stringify(bufHex); // Displaying the raw buffer for debugging
 		timestampContainer.innerHTML = getDateTime();
 	}
@@ -209,7 +242,7 @@
             });
         } else {
             console.error ("Bluetooth is not connected. Cannot write to characteristic.")
-            window.alert("Bluetooth is not connected. Cannot write to characteristic. \n Connect to BLE first!")
+            // window.alert("Bluetooth is not connected. Cannot write to characteristic. \n Connect to BLE first!")
         }
     }
 
@@ -251,16 +284,16 @@
 	}
 	
     function getDateTime() {
-		var currentdate = new Date();
-		var day = ("00" + currentdate.getDate()).slice(-2); // Convert day to string and slice
-		var month = ("00" + (currentdate.getMonth() + 1)).slice(-2);
-		var year = currentdate.getFullYear();
-		var hours = ("00" + currentdate.getHours()).slice(-2);
-		var minutes = ("00" + currentdate.getMinutes()).slice(-2);
-		var seconds = ("00" + currentdate.getSeconds()).slice(-2);
-
-		var datetime = day + "/" + month + "/" + year + " at " + hours + ":" + minutes + ":" + seconds;
-		return datetime;
+        var currentdate = new Date();
+        var day = ("00" + currentdate.getDate()).slice(-2); // Convert day to string and slice
+        var month = ("00" + (currentdate.getMonth() + 1)).slice(-2);
+        var year = currentdate.getFullYear();
+        var hours = ("00" + currentdate.getHours()).slice(-2);
+        var minutes = ("00" + currentdate.getMinutes()).slice(-2);
+        var seconds = ("00" + currentdate.getSeconds()).slice(-2);
+        
+        var datetime = day + "/" + month + "/" + year + " at " + hours + ":" + minutes + ":" + seconds;
+        return datetime;
     }
 
 </script>
