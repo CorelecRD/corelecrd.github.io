@@ -1,37 +1,38 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Regulwebapp</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/png" href="favicon.ico">
-    <link rel="stylesheet" type="text/css" href="style.css">
+	<title>Regulwebapp</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" type="image/png" href="favicon.ico">
+	<link rel="stylesheet" type="text/css" href="style.css">
 	<link rel="manifest" href="manifest.json">
-    <meta charset="UTF-8">
+	<meta charset="UTF-8">
 </head>
 
 <body>
-    <div class="topnav">
-        <h1>Regulwebapp</h1>
-    </div>
-    <div class="content">
-        <div class="card-grid">
-            <div class="card">
-                <p>
-                    <button id="connectBleButton" class="connectButton"> Connect to Device</button>
-                    <button id="disconnectBleButton" class="disconnectButton"> Disconnect</button>
-                </p>
-                <p class="gray-label">BLE state: <strong><span id="bleState" style="color:#d13a30;">Disconnected</span></strong></p>
-            </div>
-        </div>
-        <div class="card-grid">
+	<div class="topnav">
+		<img src="favicon.ico" alt="Logo" class="logo">
+		<h1>Regulwebapp</h1>
+	</div>
+	<div class="content">
+		<div class="card-grid">
 			<div class="card">
-                <h2>Electrolyse</h2>
-				<p class="elx"><span id="elxContainer">50</span> %</p>
+				<p>
+					<button id="connectBleButton" class="connectButton"> Connect to Device</button>
+					<button id="disconnectBleButton" class="disconnectButton"> Disconnect</button>
+				</p>
+				<p class="gray-label">BLE state: <strong><span id="bleState" style="color:#d13a30;">Disconnected</span></strong></p>
+			</div>
+		</div>
+		<div class="card-grid">
+			<div class="card">
+				<h2>Electrolyse</h2>
+				<p class="elx"><span id="elxContainer">--</span> %</p>
 				<p><input type="range" min="0" max="100" value="50" step="5" class="slider" id="elxSlider"></p>
-                <button id="onButton" class="onButton">BOOST</button>
-                <button id="offButton" class="offButton">VOLET</button>
-            </div>
-            <div class="card">
+				<button id="boostButton" class="defaultButton">BOOST</button>
+				<button id="voletButton" class="defaultButton">VOLET</button>
+			</div>
+			<div class="card">
 				<h3>pH</h3>
 				<p class="reading">Valeur: <span id="phContainer">NaN</span></p>
 				<p class="reading">Consigne: <span id="phSetContainer">7.5</span></p>
@@ -42,19 +43,19 @@
 				<p><input type="range" min="250" max="1000" value="750" step="5" class="slider" id="redoxSlider"></p>
 				<p class="reading">Salt: <span id="saltContainer">NaN</span> g/L</p>
 				<p class="reading">Temp: <span id="tempContainer">NaN</span> &deg;C</p>
-            </div>
-        </div>
+			</div>
+		</div>
 		<div class="card-grid">
-            <div class="card">
+			<div class="card">
 				<p class="gray-label">Raw data: <span id="valueContainer">NaN</span></p>
-                <p class="gray-label">Last reading: <span id="timestamp"></span></p>
+				<p class="gray-label">Last reading: <span id="timestamp"></span></p>
 				<p class="gray-label">Last value sent: <span id="valueSent"></span></p>
-            </div>
-        </div>
-    </div>
-    <div class="footer">
-        <p><a href="https://akeron.fr/">Created by Corelec</a></p>
-    </div>
+			</div>
+		</div>
+	</div>
+	<div class="footer">
+		<p><a href="https://akeron.fr/">Created by Corelec</a></p>
+	</div>
 </body>
 
 <script>
@@ -64,11 +65,11 @@
 </script>
 <script src="akeron.js"></script>
 <script>
-    // DOM Elements
-    const connectButton = document.getElementById('connectBleButton');
-    const disconnectButton = document.getElementById('disconnectBleButton');
-    const onButton = document.getElementById('onButton');
-    const offButton = document.getElementById('offButton');
+	// DOM Elements
+	const connectButton = document.getElementById('connectBleButton');
+	const disconnectButton = document.getElementById('disconnectBleButton');
+	const boostButton = document.getElementById('boostButton');
+	const voletButton = document.getElementById('voletButton');
 	
 	const sliderph = document.getElementById('phSlider');
 	const sliderredox = document.getElementById('redoxSlider');
@@ -76,7 +77,7 @@
 	
 	const phSetValue = document.getElementById('phSetContainer');
 	const redoxSetValue = document.getElementById('redoxSetContainer');
-    
+	
 	const retrievedValue = document.getElementById('valueContainer');
 	const phValue = document.getElementById('phContainer');
 	const redoxValue = document.getElementById('redoxContainer');
@@ -84,52 +85,44 @@
 	const saltValue = document.getElementById('saltContainer');
 	const elxValue = document.getElementById('elxContainer');
 	
-    const latestValueSent = document.getElementById('valueSent');
-    const bleStateContainer = document.getElementById('bleState');
-    const timestampContainer = document.getElementById('timestamp');
+	const latestValueSent = document.getElementById('valueSent');
+	const bleStateContainer = document.getElementById('bleState');
+	const timestampContainer = document.getElementById('timestamp');
 
 
 	//-------------------//
 	//---[ BLUETOOTH ]---//
 	//-------------------//
-    //Define BLE Device Specs
-    var deviceName ='REGUL.';
-    var bleService = '0bd51666-e7cb-469b-8e4d-2742f1ba77cc';
-    var uartCharacteristic = 'e7add780-b042-4876-aae1-112855353cc1';
-    var configCharacteristic= '00002902-0000-1000-8000-00805f9b34fb';
+	//Define BLE Device Specs
+	var deviceName ='REGUL.';
+	var bleService = '0bd51666-e7cb-469b-8e4d-2742f1ba77cc';
+	var uartCharacteristic = 'e7add780-b042-4876-aae1-112855353cc1';
+	var configCharacteristic= '00002902-0000-1000-8000-00805f9b34fb';
 
-    //Global Variables to Handle Bluetooth
-    var bleServer;
-    var bleServiceFound;
-    var uartCharacteristicFound;
+	//Global Variables to Handle Bluetooth
+	var bleServer;
+	var bleServiceFound;
+	var uartCharacteristicFound;
 	
 	var nextRequest = 77;
 	
-    // Connect Button (search for BLE Devices only if BLE is available)
-    connectButton.addEventListener('click', (event) => {
-        if (isWebBluetoothEnabled()){
-            connectToDevice();
-        }
-    });
-	
+	// pH slider
 	sliderph.addEventListener('input', async function() {
-        const value = sliderph.value;
-        //sliderphValue.textContent = `${value}`;
-		phSetValue.innerHTML = JSON.stringify(value/100);
-        writeOnCharacteristic(compositionConsigne(parseInt(value, 10), 'ph'));
-    });
+		phSetValue.innerHTML = JSON.stringify(sliderph.value/100);
+	});
+	sliderph.addEventListener('change', () => writeOnCharacteristic(compositionConsigne(parseInt(sliderph.value, 10), 'ph')));
 	
+	// Redox slider
 	sliderredox.addEventListener('input', async function() {
-        const value = sliderredox.value;
-		redoxSetValue.innerHTML = `${value}`;
-        writeOnCharacteristic(compositionConsigne(parseInt(value, 10), 'redox'));
-    });
+		redoxSetValue.innerHTML = `${sliderredox.value}`;
+	});
+	sliderredox.addEventListener('change', () => writeOnCharacteristic(compositionConsigne(parseInt(sliderredox.value, 10), 'redox')));
 	
+	// Elx slider
 	sliderelx.addEventListener('input', async function() {
-        const value = sliderelx.value;
-		elxValue.innerHTML = `${value}`;
-        writeOnCharacteristic(compositionProduction(parseInt(value, 10)));
-    });
+		elxValue.innerHTML = `${sliderelx.value}`;
+	});
+	sliderelx.addEventListener('change', () => writeOnCharacteristic(compositionProduction(parseInt(sliderelx.value, 10))));
 	
 	timer = setInterval(function() { 
 		if (bleServer && bleServer.connected){ 
@@ -137,78 +130,81 @@
 			if(nextRequest == 65) nextRequest = 77; else nextRequest = 65;
 		}}, 2000);
 
-    // Disconnect Button
-    disconnectButton.addEventListener('click', disconnectDevice);
+	// Button callbacks
+	connectButton.addEventListener('click', (event) => {
+		if (isWebBluetoothEnabled()){
+			connectToDevice();
+		}
+	});
+	disconnectButton.addEventListener('click', disconnectDevice);
+	voletButton.addEventListener('click', () => writeOnCharacteristic(compositionActivationVolet(akeron)));
+	boostButton.addEventListener('click', () => writeOnCharacteristic(compositionActivationBoost(14400)));
 
-    // Write to the ESP32 LED Characteristic
-    onButton.addEventListener('click', () => writeOnCharacteristic(1));
-    offButton.addEventListener('click', () => writeOnCharacteristic(0));
+	// Check if BLE is available in your Browser
+	function isWebBluetoothEnabled() {
+		if (!navigator.bluetooth) {
+			console.log('Web Bluetooth API is not available in this browser!');
+			bleStateContainer.innerHTML = "Web Bluetooth API is not available in this browser/device!";
+			return false
+		}
+		console.log('Web Bluetooth API supported in this browser.');
+		return true
+	}
 
-    // Check if BLE is available in your Browser
-    function isWebBluetoothEnabled() {
-        if (!navigator.bluetooth) {
-            console.log('Web Bluetooth API is not available in this browser!');
-            bleStateContainer.innerHTML = "Web Bluetooth API is not available in this browser/device!";
-            return false
-        }
-        console.log('Web Bluetooth API supported in this browser.');
-        return true
-    }
-
-    // Connect to BLE Device and Enable Notifications
-    function connectToDevice(){
-        console.log('Initializing Bluetooth...');
-        navigator.bluetooth.requestDevice({
-            filters: [{name: deviceName}],
-            optionalServices: [bleService]
-        })
-        .then(device => {
-            console.log('Device Selected:', device.name);
-            bleStateContainer.innerHTML = 'Connected to device ' + device.name;
-            bleStateContainer.style.color = "#24af37";
-            device.addEventListener('gattservicedisconnected', onDisconnected);
-            return device.gatt.connect();
-        })
-        .then(gattServer =>{
-            bleServer = gattServer;
-            console.log("Connected to GATT Server");
-            return bleServer.getPrimaryService(bleService);
-        })
-        .then(service => {
-            bleServiceFound = service;
-            console.log("Service discovered:", service.uuid);
-            return service.getCharacteristic(uartCharacteristic);
-        })
-        .then(characteristic => {
-            console.log("Characteristic discovered:", characteristic.uuid);
-            uartCharacteristicFound = characteristic;
-            characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
-            characteristic.startNotifications();
-            console.log("Notifications Started.");
-            //return characteristic.readValue();
-        })
-        .then(value => {
-            console.log("Read value: ", value);
-            const decodedValue = new TextDecoder().decode(value);
-            console.log("Decoded value: ", decodedValue);
-            retrievedValue.innerHTML = decodedValue;            
-        })
-        .catch(error => {
-            console.log('Error: ', error);
+	// Connect to BLE Device and Enable Notifications
+	function connectToDevice(){
+		console.log('Initializing Bluetooth...');
+		navigator.bluetooth.requestDevice({
+			filters: [{name: deviceName}],
+			optionalServices: [bleService]
+		})
+		.then(device => {
+			console.log('Device Selected:', device.name);
+			bleStateContainer.innerHTML = 'Connected to device ' + device.name;
+			bleStateContainer.style.color = "#24af37";
+			device.addEventListener('gattservicedisconnected', onDisconnected);
+			return device.gatt.connect();
+		})
+		.then(gattServer =>{
+			bleServer = gattServer;
+			console.log("Connected to GATT Server");
+			return bleServer.getPrimaryService(bleService);
+		})
+		.then(service => {
+			bleServiceFound = service;
+			console.log("Service discovered:", service.uuid);
+			return service.getCharacteristic(uartCharacteristic);
+		})
+		.then(characteristic => {
+			console.log("Characteristic discovered:", characteristic.uuid);
+			uartCharacteristicFound = characteristic;
+			characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
+			characteristic.startNotifications();
+			console.log("Notifications Started.");
+			//return characteristic.readValue();
+		})
+		.then(value => {
+			console.log("Read value: ", value);
+			const decodedValue = new TextDecoder().decode(value);
+			console.log("Decoded value: ", decodedValue);
+			retrievedValue.innerHTML = decodedValue;			
+		})
+		.catch(error => {
+			console.log('Error: ', error);
 			bleStateContainer.innerHTML = "Device disconnected";
 			bleStateContainer.style.color = "#d13a30";
-        })
-    }
+		})
+	}
 	
-    function onDisconnected(event){
-        console.log('Device Disconnected:', event.target.device.name);
-        bleStateContainer.innerHTML = "Device disconnected";
-        bleStateContainer.style.color = "#d13a30";
+	function onDisconnected(event){
+		console.log('Device Disconnected:', event.target.device.name);
+		bleStateContainer.innerHTML = "Device disconnected";
+		bleStateContainer.style.color = "#d13a30";
 
-        connectToDevice();
-    }
+		connectToDevice();
+	}
 
-	// Example usage
+	// Update values
 	function handleCharacteristicChange(event) {
 		const buf = new Uint8Array(event.target.value.buffer); // Assuming event.target.value is an ArrayBuffer
 		const bufHex = toHexString(buf);
@@ -219,60 +215,77 @@
 		redoxValue.innerHTML = JSON.stringify(akeron.valRdx);
 		tempValue.innerHTML = JSON.stringify(akeron.valTemp/10);
 		saltValue.innerHTML = JSON.stringify(akeron.valSel/10);
-        elxValue.innerHTML = JSON.stringify(akeron.valElx);
+		elxValue.innerHTML = JSON.stringify(akeron.valElx);
 		elxSlider.value = akeron.valElx;
+		
+		
+		if(akeron.VoletActif != null){
+			if(akeron.VoletActif == 1) voletButton.style.background = "#1b8a94";
+			if(akeron.VoletActif == 0) voletButton.style.background = "#5f6c6d";
+		}
+		
+		if(akeron.BoostActif != null){
+			if(akeron.BoostActif == 1){
+				boostButton.style.background = "#1b8a94";
+				elxValue.style.color = "#bebebe";
+			} else {
+				boostButton.style.background = "#5f6c6d";
+				elxValue.style.color = "#000000";
+			}
+		}
+		
 					
 		retrievedValue.innerHTML = JSON.stringify(bufHex); // Displaying the raw buffer for debugging
 		timestampContainer.innerHTML = getDateTime();
 	}
 
-    function writeOnCharacteristic(value){
-        if (bleServer && bleServer.connected) {
-            bleServiceFound.getCharacteristic(uartCharacteristic)
-            .then(characteristic => {
-                console.log("Found characteristic: ", characteristic.uuid);
-                return characteristic.writeValue(value);
-            })
-            .then(() => {
-                latestValueSent.innerHTML = toHexString(value);
-                console.log("Value written to characteristic:", value);
-            })
-            .catch(error => {
-                console.error("Error writing to characteristic: ", error);
-            });
-        } else {
-            console.error ("Bluetooth is not connected. Cannot write to characteristic.")
-            // window.alert("Bluetooth is not connected. Cannot write to characteristic. \n Connect to BLE first!")
-        }
-    }
+	function writeOnCharacteristic(value){
+		if (bleServer && bleServer.connected) {
+			bleServiceFound.getCharacteristic(uartCharacteristic)
+			.then(characteristic => {
+				console.log("Found characteristic: ", characteristic.uuid);
+				return characteristic.writeValue(value);
+			})
+			.then(() => {
+				latestValueSent.innerHTML = toHexString(value);
+				console.log("Value written to characteristic:", value);
+			})
+			.catch(error => {
+				console.error("Error writing to characteristic: ", error);
+			});
+		} else {
+			console.error ("Bluetooth is not connected. Cannot write to characteristic.")
+			window.alert("Bluetooth is not connected. Cannot write to characteristic.")
+		}
+	}
 
-    function disconnectDevice() {
-        console.log("Disconnect Device.");
-        if (bleServer && bleServer.connected) {
-            if (uartCharacteristicFound) {
-                uartCharacteristicFound.stopNotifications()
-                    .then(() => {
-                        console.log("Notifications Stopped");
-                        return bleServer.disconnect();
-                    })
-                    .then(() => {
-                        console.log("Device Disconnected");
-                        bleStateContainer.innerHTML = "Device Disconnected";
-                        bleStateContainer.style.color = "#d13a30";
+	function disconnectDevice() {
+		console.log("Disconnect Device.");
+		if (bleServer && bleServer.connected) {
+			if (uartCharacteristicFound) {
+				uartCharacteristicFound.stopNotifications()
+					.then(() => {
+						console.log("Notifications Stopped");
+						return bleServer.disconnect();
+					})
+					.then(() => {
+						console.log("Device Disconnected");
+						bleStateContainer.innerHTML = "Device Disconnected";
+						bleStateContainer.style.color = "#d13a30";
 
-                    })
-                    .catch(error => {
-                        console.log("An error occurred:", error);
-                    });
-            } else {
-                console.log("No characteristic found to disconnect.");
-            }
-        } else {
-            // Throw an error if Bluetooth is not connected
-            console.error("Bluetooth is not connected.");
-            window.alert("Bluetooth is not connected.")
-        }
-    }
+					})
+					.catch(error => {
+						console.log("An error occurred:", error);
+					});
+			} else {
+				console.log("No characteristic found to disconnect.");
+			}
+		} else {
+			// Throw an error if Bluetooth is not connected
+			console.error("Bluetooth is not connected.");
+			window.alert("Bluetooth is not connected.")
+		}
+	}
 	
 	//---------------//
 	//---[ UTILS ]---//
@@ -283,18 +296,18 @@
 	  }).join('')
 	}
 	
-    function getDateTime() {
-        var currentdate = new Date();
-        var day = ("00" + currentdate.getDate()).slice(-2); // Convert day to string and slice
-        var month = ("00" + (currentdate.getMonth() + 1)).slice(-2);
-        var year = currentdate.getFullYear();
-        var hours = ("00" + currentdate.getHours()).slice(-2);
-        var minutes = ("00" + currentdate.getMinutes()).slice(-2);
-        var seconds = ("00" + currentdate.getSeconds()).slice(-2);
-        
-        var datetime = day + "/" + month + "/" + year + " at " + hours + ":" + minutes + ":" + seconds;
-        return datetime;
-    }
+	function getDateTime() {
+		var currentdate = new Date();
+		var day = ("00" + currentdate.getDate()).slice(-2); // Convert day to string and slice
+		var month = ("00" + (currentdate.getMonth() + 1)).slice(-2);
+		var year = currentdate.getFullYear();
+		var hours = ("00" + currentdate.getHours()).slice(-2);
+		var minutes = ("00" + currentdate.getMinutes()).slice(-2);
+		var seconds = ("00" + currentdate.getSeconds()).slice(-2);
+		
+		var datetime = day + "/" + month + "/" + year + " at " + hours + ":" + minutes + ":" + seconds;
+		return datetime;
+	}
 
 </script>
 
