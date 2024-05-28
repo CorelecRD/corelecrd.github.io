@@ -47,6 +47,9 @@
 				<p class="reading">Salt: <span id="saltContainer">NaN</span> g/L</p>
 				<p class="reading">Temp: <span id="tempContainer">NaN</span> &deg;C</p>
 			</div>
+			<div class="card">
+				<button id="pumpButton" class="defaultButton">POMPES FORCEES</button>
+			</div>
 		</div>
 		<div class="card-grid">
 			<div class="card">
@@ -73,6 +76,7 @@
 	const disconnectButton = document.getElementById('disconnectBleButton');
 	const boostButton = document.getElementById('boostButton');
 	const voletButton = document.getElementById('voletButton');
+	const pumpButton = document.getElementById('pumpButton');
 	
 	const sliderph = document.getElementById('phSlider');
 	const sliderredox = document.getElementById('redoxSlider');
@@ -142,6 +146,7 @@
 	disconnectButton.addEventListener('click', disconnectDevice);
 	voletButton.addEventListener('click', () => writeOnCharacteristic(compositionActivationVolet(akeron)));
 	boostButton.addEventListener('click', () => writeOnCharacteristic(compositionActivationBoost(360)));
+	pumpButton.addEventListener('click', () => writeOnCharacteristic(compositionMoteursForces()));
 
 	// Check if BLE is available in your Browser
 	function isWebBluetoothEnabled() {

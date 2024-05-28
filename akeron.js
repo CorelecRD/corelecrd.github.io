@@ -234,6 +234,18 @@ function compositionProduction(production) {
 	return trame;
 }
 
+function compositionMoteursForces() {
+	const trame = trameDonneesVide('D');
+	trame[10] = byteSet(1, 3, 0);
+	trame[10] = byteSet(1, 2, trame[10]);
+	trame[10] = byteSet(1, 1, trame[10]);
+	trame[10] = byteSet(1, 0, trame[10]);
+	
+	trame[15] = get_crc(trame.slice(0, 15)); // CRC
+
+	return trame;
+}
+
 function compositionResetUsine() {
 	const trame = trameDonneesVide('M');
 	trame[14] = 0xCF;
