@@ -48,6 +48,7 @@
 				<p class="reading">Temp: <span id="tempContainer">NaN</span> &deg;C</p>
 			</div>
 			<div class="card">
+				<p class="gray-label">Code PIN: <span id="pinContainer">NaN</span></p>
 				<button id="pumpButton" class="defaultButton">POMPES FORCEES</button>
 			</div>
 		</div>
@@ -91,6 +92,7 @@
 	const tempValue = document.getElementById('tempContainer');
 	const saltValue = document.getElementById('saltContainer');
 	const elxValue = document.getElementById('elxContainer');
+	const pinValue = document.getElementById('pinContainer');
 	
 	const latestValueSent = document.getElementById('valueSent');
 	const bleStateContainer = document.getElementById('bleState');
@@ -134,8 +136,14 @@
 	timer = setInterval(function() { 
 		if (bleServer && bleServer.connected){ 
 			writeOnCharacteristic(composeRequest(nextRequest)); 
-			if(nextRequest == 65) nextRequest = 77; else nextRequest = 65;
-		}}, 2000);
+			switch(nextRequest){
+				case 65: nextRequest = 77; break;
+				case 77: nextRequest = 83; break;
+				case 83: nextRequest = 69; break;
+				case 69: nextRequest = 65; break;
+				default: nextRequest = 83; break;
+			}
+		}}, 1000);
 
 	// Button callbacks
 	connectButton.addEventListener('click', (event) => {
@@ -216,29 +224,40 @@
 	function handleCharacteristicChange(event) {
 		const buf = new Uint8Array(event.target.value.buffer); // Assuming event.target.value is an ArrayBuffer
 		const bufHex = toHexString(buf);
-		
 		console.log("Characteristic value changed: ", bufHex);
 		parseData(buf, akeron);
-		phValue.innerHTML = JSON.stringify(akeron.valPh/100);
-		redoxValue.innerHTML = JSON.stringify(akeron.valRdx);
-		tempValue.innerHTML = JSON.stringify(akeron.valTemp/10);
-		saltValue.innerHTML = JSON.stringify(akeron.valSel/10);
-		elxValue.innerHTML = JSON.stringify(akeron.valElx);
-		elxSlider.value = akeron.valElx;
 		
-		if(akeron.VoletForce != null){
-			if(akeron.VoletForce == 1) voletButton.style.background = "#1b8a94";
-			if(akeron.VoletForce == 0) voletButton.style.background = "#5f6c6d";
-		}
-		
-		if(akeron.BoostActif != null){
-			if(akeron.BoostActif == 1){
-				boostButton.style.background = "#1b8a94";
-				elxValue.style.color = "#bebebe";
-			} else {
-				boostButton.style.background = "#5f6c6d";
-				elxValue.style.color = "#000000";
-			}
+		switch(buf[1]){
+			case 77:
+				phValue.innerHTML = JSON.stringify(akeron.valPh/100);
+				redoxValue.innerHTML = JSON.stringify(akeron.valRdx);
+				tempValue.innerHTML = JSON.stringify(akeron.valTemp/10);
+				saltValue.innerHTML = JSON.stringify(akeron.valSel/10);
+				break;
+			case 65:
+				elxValue.innerHTML = JSON.stringify(akeron.valElx);
+				elxSlider.value = akeron.valElx;
+				if(akeron.VoletForce == 1) voletButton.style.background = "#1b8a94";
+				if(akeron.VoletForce == 0) voletButton.style.background = "#5f6c6d";
+				if(akeron.BoostActif == 1){
+					boostButton.style.background = "#1b8a94";
+					elxValue.style.color = "#bebebe";
+				} else {
+					boostButton.style.background = "#5f6c6d";
+					elxValue.style.color = "#000000";
+				}
+				break;
+			case 83:
+				phSetValue.innerHTML = JSON.stringify(akeron.setPh/100);
+				sliderph.value = akeron.setPh;
+				break;
+			case 69:
+				redoxSetValue.innerHTML = JSON.stringify(akeron.setRdx);
+				sliderredox.value = akeron.setRdx;
+				pinValue.innerHTML = JSON.stringify(akeron.PinCodeSoft);
+				break;
+			default:
+				break;
 		}
 		
 		retrievedValue.innerHTML = JSON.stringify(bufHex); // Displaying the raw buffer for debugging

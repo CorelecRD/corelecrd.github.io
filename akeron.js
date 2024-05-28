@@ -39,7 +39,8 @@ const akeron = {
 	Salinite: null,
 	Sleep: null,
 	Timer: null,
-	DureeST: null
+	DureeST: null,
+	PinCodeSoft: null
 };
 
 // Functions
@@ -87,6 +88,13 @@ function parseData(buf, appareil) {
 				appareil.Sleep = byteToBool(buf[13], 6) && byteToBool(buf[13],5);
 				appareil.Timer = byteToBool(buf[13], 7) && byteToBool(buf[13],5);
 				appareil.DureeST = buf[13] & 0x1F;
+				break;
+			case 83:
+				appareil.setPh = ((buf[2] << 8) | buf[3]);
+				break;
+			case 69:
+				appareil.setRdx = (buf[2] << 8) | buf[3];
+				appareil.PinCodeSoft = (buf[12] << 8) | buf[13];
 				break;
 			default:
 				break;
