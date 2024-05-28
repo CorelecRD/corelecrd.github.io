@@ -3,6 +3,9 @@
 <head>
 	<title>Regulwebapp</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv='cache-control' content='no-cache'> 
+	<meta http-equiv='expires' content='0'> 
+	<meta http-equiv='pragma' content='no-cache'>
 	<link rel="icon" type="image/png" href="favicon.ico">
 	<link rel="stylesheet" type="text/css" href="style.css">
 	<link rel="manifest" href="manifest.json">
@@ -138,7 +141,7 @@
 	});
 	disconnectButton.addEventListener('click', disconnectDevice);
 	voletButton.addEventListener('click', () => writeOnCharacteristic(compositionActivationVolet(akeron)));
-	boostButton.addEventListener('click', () => writeOnCharacteristic(compositionActivationBoost(14400)));
+	boostButton.addEventListener('click', () => writeOnCharacteristic(compositionActivationBoost(360)));
 
 	// Check if BLE is available in your Browser
 	function isWebBluetoothEnabled() {
@@ -218,10 +221,9 @@
 		elxValue.innerHTML = JSON.stringify(akeron.valElx);
 		elxSlider.value = akeron.valElx;
 		
-		
-		if(akeron.VoletActif != null){
-			if(akeron.VoletActif == 1) voletButton.style.background = "#1b8a94";
-			if(akeron.VoletActif == 0) voletButton.style.background = "#5f6c6d";
+		if(akeron.VoletForce != null){
+			if(akeron.VoletForce == 1) voletButton.style.background = "#1b8a94";
+			if(akeron.VoletForce == 0) voletButton.style.background = "#5f6c6d";
 		}
 		
 		if(akeron.BoostActif != null){
@@ -234,7 +236,6 @@
 			}
 		}
 		
-					
 		retrievedValue.innerHTML = JSON.stringify(bufHex); // Displaying the raw buffer for debugging
 		timestampContainer.innerHTML = getDateTime();
 	}

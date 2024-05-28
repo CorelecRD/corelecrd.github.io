@@ -220,7 +220,7 @@ function compositionActivationBoost(boost) {
 
 function compositionActivationVolet(appareil) {
 	const trame = trameDonneesVide('A');
-	trame[10] = byteSet(!appareil.VoletActif, 3, appareil.RawFieldA10);
+	trame[10] = byteSet(!appareil.VoletForce, 3, appareil.RawFieldA10);
 	trame[15] = get_crc(trame.slice(0, 15)); // CRC
 
 	return trame;
