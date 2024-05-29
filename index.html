@@ -114,6 +114,7 @@
 	var uartCharacteristicFound;
 	
 	var nextRequest = 77;
+	var isWriting = false;
 	
 	// pH slider
 	sliderph.addEventListener('input', async function() {
@@ -265,7 +266,13 @@
 	}
 
 	function writeOnCharacteristic(value){
-		if (bleServer && bleServer.connected) {
+		if (isWriting) {
+            console.warn("Characteristic is currently being written to. Waiting for it to be free...");
+            setTimeout(() => writeOnCharacteristic(value), 100); // Retry after 100ms
+            return;
+        }
+		if (bleServer && bleServer.connected && bleServiceFound) {
+			isWriting = true; // Get write lock
 			bleServiceFound.getCharacteristic(uartCharacteristic)
 			.then(characteristic => {
 				console.log("Found characteristic: ", characteristic.uuid);
@@ -277,10 +284,13 @@
 			})
 			.catch(error => {
 				console.error("Error writing to characteristic: ", error);
+			})
+			.finally(() => {
+				isWriting = false; // Reset the flag when the write operation is done
 			});
 		} else {
 			console.error ("Bluetooth is not connected. Cannot write to characteristic.")
-			window.alert("Bluetooth is not connected. Cannot write to characteristic.")
+			// window.alert("Bluetooth is not connected. Cannot write to characteristic.")
 		}
 	}
 
