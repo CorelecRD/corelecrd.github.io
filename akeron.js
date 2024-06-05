@@ -114,7 +114,7 @@ function composeRequest(mnemonic) {
 	table[4] = get_crc(table.slice(0, 4)); // CRC
 	table[5] = 42; // Stop
 
-	table[6] = 0;
+	// table[6] = 0;
 
 	return table;
 }
